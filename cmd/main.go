@@ -16,9 +16,9 @@ func main() {
 	}
 
 	gsheets.InitClient(b, "15Bz08E9MvWbsRE5NwAEWlZGsDO2bsZHa2H05X2ald9g")
-	gsheets.AdjustBalance("1", "2")
-	gsheets.AdjustBalance("1", "2")
-	gsheets.AdjustBalance("2", "4")
+	gsheets.AdjustBalance("income", "100")
+	gsheets.AdjustBalance("expense", "100")
+	gsheets.AdjustBalance("income", "100")
 	addr := ":8080" // порт можно вынести в конфиг
 	router := myhttp.NewRouter()
 

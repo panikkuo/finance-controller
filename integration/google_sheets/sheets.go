@@ -18,6 +18,11 @@ var (
 	once           sync.Once
 )
 
+const (
+	incomeWRRange = "Finance!B2"
+	expenseWRange = "Finance!D2"
+)
+
 func InitClient(credentialsJSON []byte, _spreadsheetId string) error {
 	var err error
 	ctx := context.Background()
@@ -30,24 +35,71 @@ func InitClient(credentialsJSON []byte, _spreadsheetId string) error {
 		}
 		httpClient := config.Client(ctx)
 		clientInstance, err = sheets.NewService(ctx, option.WithHTTPClient(httpClient))
+
+		prepareSheets()
 	})
 	return err
 }
 
-func AdjustBalance(operationType string, totalSum string) error {
+func prepareSheets() error {
+	ctx := context.Background()
+	values := [][]interface{}{
+		{"0"},
+	}
+	_, _ = clientInstance.Spreadsheets.Values.Update(spreadsheetId, incomeWRRange, &sheets.ValueRange{
+		Values: values,
+	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
+
+	_, _ = clientInstance.Spreadsheets.Values.Update(spreadsheetId, expenseWRange, &sheets.ValueRange{
+		Values: values,
+	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
+
+	return nil
+}
+
+func AdjustBalance(operationType string, amountString string) error {
 	ctx := context.Background()
 
-	writeRange := "Finance!A2:B2"
+	var readRange string
 
-	sum, err := strconv.ParseFloat(totalSum, 64)
+	switch operationType {
+	case "income":
+		readRange = incomeWRRange
+	case "expense":
+		readRange = expenseWRange
+	}
+
+	response, err := clientInstance.Spreadsheets.Values.Get(spreadsheetId, readRange).Context(ctx).Do()
+	if err != nil {
+		return fmt.Errorf("ошибка чтения из Google Sheets: %v", err)
+	}
+
+	currentSum, err := strconv.ParseFloat(fmt.Sprint(response.Values[0][0]), 64)
+	if err != nil {
+		return fmt.Errorf("неправильный формат текущей суммы в таблице: %v", err)
+	}
+
+	amount, err := strconv.ParseFloat(amountString, 64)
 	if err != nil {
 		return fmt.Errorf("неправильный формат суммы: %v", err)
 	}
 
-	values := [][]interface{}{
-		{operationType, sum},
+	var result float64 = 0
+
+	switch operationType {
+	case "income":
+		result = currentSum + amount
+	case "expense":
+		result = currentSum - amount
 	}
-	_, err = clientInstance.Spreadsheets.Values.Update(spreadsheetId, writeRange, &sheets.ValueRange{
+
+	resultString := strconv.FormatFloat(result, 'f', -1, 64)
+
+	values := [][]interface{}{
+		{resultString},
+	}
+
+	_, err = clientInstance.Spreadsheets.Values.Update(spreadsheetId, readRange, &sheets.ValueRange{
 		Values: values,
 	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
 
