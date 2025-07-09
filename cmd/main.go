@@ -15,11 +15,8 @@ func main() {
 		log.Fatalf("Не удалось прочитать файл учетных данных: %v", err)
 	}
 
-	gsheets.InitClient(b, "15Bz08E9MvWbsRE5NwAEWlZGsDO2bsZHa2H05X2ald9g")
-	gsheets.AdjustBalance("income", "100")
-	gsheets.AdjustBalance("expense", "100")
-	gsheets.AdjustBalance("income", "100")
-	addr := ":8080" // порт можно вынести в конфиг
+	gsheets.InitClient(b, "15Bz08E9MvWbsRE5NwAEWlZGsDO2bsZHa2H05X2ald9g", "finance")
+	addr := ":8080"
 	router := myhttp.NewRouter()
 
 	log.Printf("Сервер запущен на %s", addr)

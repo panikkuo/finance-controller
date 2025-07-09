@@ -10,18 +10,20 @@ import (
 	utils "github.com/panikkuo/finance-controller/utils"
 )
 
-func parse(data map[string]interface{}) (string, string, error) {
-	operationType, err := utils.GetFieldFromJsonAsString(data, "type", true)
+func parse(data map[string]interface{}) (string, string, string, error) {
+	operationType, err := utils.GetFieldFromMapAsString(data, "type", true)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	totalSum, err := utils.GetFieldFromJsonAsString(data, "total", true)
+	totalSum, err := utils.GetFieldFromMapAsString(data, "total", true)
 
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	return operationType, totalSum, nil
+	category, err := utils.GetFieldFromMapAsString(data, "category", false)
+
+	return totalSum, operationType, category, nil
 }
 
 func HandlePost(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +47,7 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalSum, operationType, err := parse(data)
+	totalSum, operationType, category, err := parse(data)
 
 	if err != nil {
 		log.Printf("err.Error(): %v", err)
@@ -53,7 +55,7 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = gsheets.AdjustBalance(totalSum, operationType)
+	err = gsheets.AdjustBalance(operationType, totalSum, category)
 
 	if err != nil {
 		log.Printf("err.Error(): %v", err)
